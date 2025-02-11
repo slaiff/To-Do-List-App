@@ -39,11 +39,25 @@ def welcome(username, welcomeString):
 
 #quit function
 def goodbye():
-	goodbye = """
-	Thank you for using Task List Builder! I hope it helped you with your schedule!
-				Have a good day :)
+	confirmMssg = """
+	"Are you sure you want to close the app? Please note your progress will *not* be saved to file,
+	and all progress will be lost. If you wish to save, please take note of your additions, changes, etc
+	and add these to your text file before closing.
 	"""
-	print(goodbye)
+	print(confirmMssg)
+	userConfirm = input("Close app? 'y' or 'n' > ").lower()
+	if(userConfirm in ['y']):
+		goodbye = """
+		Thank you for using Task List Builder! I hope it helped you with your schedule!
+				Have a good day :)
+		"""
+		print(goodbye)
+		sys.exit(0)
+	else:
+		print("Going back...")
+		userConfirm = 'n'
+
+	return userConfirm
 
 #open file function
 def readFile():
@@ -107,10 +121,11 @@ Select >> : """
 	if(userInput2 == "5"):
 		#call goodbye
 		os.system('cls') #clear screen 
-		goodbye()
-		sys.exit(0)
+		userConfirm = goodbye()
+		if(userConfirm in ['n']):
+			userInput2 = "1"
 	if(userInput2 == "more"):
-		moreInfo(username, welcomeString)
+		moreInfo()
 	return userInput2
 
 #allows user to add a task to their list
@@ -130,19 +145,20 @@ def addTask(tasks,username):
 		print("Invalid input, please select 1,2, or 3.")
 		importance = input(">> : ")
 	if importance == "1":
-		importance = "low"
+		importance = "Low"
 	if importance == "2":
-		importance = "medium"
+		importance = "Medium"
 	if importance == "3":
-		importance = "high"
-	status = input("Completion status (C for complete/I for incomplete): ")
+		importance = "High"
+
+	status = input("Completion status (C for complete/I for incomplete): ").lower()
 	while status not in ["I", "C", "i", "c"]:
 		print("Invalid input for status, please input I or C : ")
 		status = input(">> : ").lower()
 	if status == "i":
-		status = "incomplete"
+		status = "Incomplete"
 	if status == "c":
-		status = "complete"
+		status = "Complete"
 	tasks.append(Task(title, dueDate, importance, status)) 
 	os.system('cls') #clear screen
 	printList(tasks,username)
@@ -167,6 +183,7 @@ def completeTask(tasks, username):
 				break
 			else:
 				print("Task not completed")
+				break
 		else:
 			print("Not a valid selection, try again.")
 
@@ -174,7 +191,7 @@ def rebuild():
 	os.system('cls') #clear screen
 	main()
 	
-def moreInfo(username, welcomeString):
+def moreInfo():
 	os.system('cls') #clear screen
 	print("Here is some more info about this app's features!\n")
 	moreInfoPara = """
@@ -195,13 +212,13 @@ def moreInfo(username, welcomeString):
 	"""
 	print(moreInfoPara)
 	print()
-	userInput = str(0)
-	while True:
-		userInput = input("When ready, enter 'r' or 'R' to return back to the home page: ").strip().lower()
-		if userInput == 'r' :
-			os.system('cls')
-			welcome(username, welcomeString)
-			break
+	input("When ready, press Enter to return back to the home page...")
+	#while True:
+		#userInput = input("When ready, enter 'r' or 'R' to return back to the home page: ").strip().lower()
+		#if userInput == 'r' :
+			#os.system('cls')
+			#userRequest = welcome(username, welcomeString)
+			#return userRequest
 
 
 def printList(tasks, username):
@@ -245,10 +262,13 @@ def main():
 			printList(tasksList, username)
 			break  # Move to the main loop
 		elif userInput == 'more':
-			moreInfo(username, welcomeString)  # Show the More Info page
+			moreInfo() #shows more info page
 		elif userInput in ['quit' , 'q']:
-			goodbye()
-			sys.exit(0)
+			userInput2 = goodbye()
+			if(userInput2 in ['n']):
+				userInput2 = "1"
+			else:
+				userInput2 = "5"
 		else:
 			print()
 			print("Invalid input. Please enter 'start', 'more', or 'quit'.")
@@ -259,7 +279,7 @@ def main():
 	  # Main loop for home menu
 	while True:
 		userInput2 = homeMenu(tasksList, username, welcomeString)
-		if userInput2 == "6":  # Assuming 6 is the exit option
+		if userInput2 == "5":
 			break
 	#afterloop
 	goodbye()

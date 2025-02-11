@@ -1,5 +1,5 @@
-Clean house, 0, high, complete
-Take a walk, 0, medium, incomplete
-Eat a healthy dinner, 0, high, incomplete
-Finish AS5 for SoftEng1, 1, high, incomplete
-Hangout with friends, 2, low, incomplete
+Clean house, 0, High, Complete
+Take a walk, 0, Medium, Incomplete
+Eat a healthy dinner, 0, High, Incomplete
+Finish AS5 for SoftEng1, 1, High, Incomplete
+Hangout with friends, 2, Low, Incomplete
