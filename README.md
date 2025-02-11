@@ -1,4 +1,4 @@
-# Assignment5 - To-Do List App
+# Assignment 5 - To-Do List App
 This application provides an organized, visually pleasing, helpful tool to the user by organizing their input file into a to-do list! 
 In it's current version, the app allows for input via a formatted text file (format specified in startup). The app then takes the file contents and formats it into a organized task-list/to-do list. 
 ![image](https://github.com/user-attachments/assets/142a1540-293a-4636-b77f-c809e0f14854)
