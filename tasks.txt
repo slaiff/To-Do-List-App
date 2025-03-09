@@ -1,5 +1,4 @@
-Clean house, 0, High, Complete
-Take a walk, 0, Medium, Incomplete
-Eat a healthy dinner, 0, High, Incomplete
-Finish AS5 for SoftEng1, 1, High, Incomplete
-Hangout with friends, 2, Low, Incomplete
+Fard,1,Low,Incomplete
+Skeet,3,High,Incomplete
+PENOIs,5,Low,Complete
+BigZkibidi,0,High,Complete
