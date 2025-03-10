@@ -107,13 +107,15 @@ def homeMenu(tasksList, username, welcomeString):
                   Options
         ---------------------------
         1. Add a task 
-        2. Complete a task
-        3. Display the task list
-        4. Begin / End Timer
-        5. Sort the task list- FIXME
-        6. Save to file - WIP
-        7. Rebuild a new task list - from file
-        8. Close app
+        2. Edit a task
+        3. Complete a task
+        4. Remove a task
+        5. Display the task list
+        6. Begin / End Timer
+        7. Sort the task list- FIXME
+        8. Save to file - WIP
+        9. Rebuild a new task list - from file
+        E. Close app
         Want more info? Enter 'more'
 
 Select >> : """
@@ -123,27 +125,39 @@ Select >> : """
         os.system('cls') #clear screen 
         addTask(tasksList, username)
     if(userInput2 == "2"):
-        os.system('cls') #clear screen 
-        completeTask(tasksList, username)
+        os.system('cls')
+        wakeEditMS(tasksList, username)
     if(userInput2 == "3"):
         os.system('cls') #clear screen 
-        printList(tasksList, username)
+        completeTask(tasksList, username)
     if(userInput2 == "4"):
+        os.system('cls')
+        updateFile(tasksList)
+        printList(tasksList, username)
+        wakeEditAndDeleteMS(tasksList)
+        time.sleep(3)
+        tasksList = readFile()
+        print("Updated list:\n")
+        printList(tasksList,username)
+    if(userInput2 == "5"):
+        os.system('cls') #clear screen 
+        printList(tasksList, username)
+    if(userInput2 == "6"):
         os.system('cls')
         print("waking timer..\n")
         wakeTimerMS()
-    if(userInput2 == "5"):
+    if(userInput2 == "7"):
         os.system('cls')
         print("waking sort..\n")
         wakeSortMS()
-    if(userInput2 == "6"): 
+    if(userInput2 == "8"): 
         os.system('cls')
         print("waking save..\n")
         wakeSaveMS()
-    if(userInput2 == "7"):
+    if(userInput2 == "9"):
         os.system('cls')
         rebuild()
-    if(userInput2 == "8"):
+    if(userInput2 == "E"):
         #call goodbye
         os.system('cls') #clear screen 
         print("Updating file...\n")
@@ -199,7 +213,6 @@ def completeTask(tasks, username):
     
     while True:
         userInput = input("Select << : ")
-        #userInput = int(userInput)
 
         if userInput.isdigit() and 1 <= int(userInput) <= numTasks:
             task = tasks[int(userInput) - 1];
@@ -332,6 +345,79 @@ def wakeTimerMS():
     except FileNotFoundError:
         print("ERROR: Could not find the listening file for the Timer feature within MicroserviceD\n")
 
+#Wake Edit
+def wakeEditMS(tasksList, username):
+#File
+    listenFileForEdit = "listenEdit.txt"
+#ask user for index to edit 
+    print()
+    print("Select one of your tasks below to edit: ")
+    numTasks = printList(tasksList, username) #numTasks gathered
+
+    while True:
+        userInput = input("Select << : ")
+
+        if userInput.isdigit() and 1 <= int(userInput) <= numTasks:
+            task = tasksList[int(userInput) - 1];
+            confirmInput = input(f"Are you sure you want to edit << {task.title} >> ?\nEnter 'y' for yes, 'n' for no: ").lower()
+            if(confirmInput == "y"):
+                os.system('cls')
+                #Prompt for pieces to be re-placed 
+                print("For each category of your task, enter an edit or simply press enter to leave it unchanged!\n")
+                importance = """Importance (select one):
+                1. Low
+                2. Medium
+                3. High
+                << : """
+                print()
+                print("Fill-in the following".center(40))
+                print("_" * 40)
+                title = input("Task name: ")
+                dueDate = input("Days till due (a number): ")
+                importance = input(importance)
+                while importance not in ["1","2","3"]:
+                    print("Invalid input, please select 1,2, or 3.")
+                    importance = input(">> : ")
+                if importance == "1":
+                    importance = "Low"
+                if importance == "2":
+                    importance = "Medium"
+                if importance == "3":
+                    importance = "High"
+
+                #write the newly built object to the file 
+                os.system('cls') #clear screen
+                try:
+                    with open(listenFileForEdit, 'w') as f:
+                        #build object - like passing to a function, which is our class
+                        f.write(f"{title},{dueDate},{importance}\n")
+                except Exception as e:
+                    print(f"Error updating file: {e}")
+
+                print("List updated:\n")
+                printList(tasksList, username)
+                break
+            else:
+                print("No tasks selected for editing.")
+                break
+        else:
+            print("Not a valid selection, try again.")
+
+
+
+#Wakes delete 
+def wakeEditAndDeleteMS(tasksList):
+    listenFileForDelete = "listeningFileMS-D.txt"
+
+    userInput = input("Which task would you like to remove?:")
+
+    try:
+        with open(listenFileForDelete, "w") as file:
+            file.write("del\n")
+            file.write(userInput)
+    except FileNotFoundError:
+        print("ERROR: Could not find the listening file for the Timer feature within MicroserviceD\n")
+
 
 #Main func - program flow handled here initially-
 #-before hand off to homeMenu
@@ -364,7 +450,7 @@ def main():
             if(userInput2 in ['n']):
                 userInput2 = "1"
             else:
-                userInput2 = "5"
+                userInput2 = "E"
         else:
             print()
             print("Invalid input. Please enter 'start', 'more', or 'quit'.")
@@ -375,7 +461,7 @@ def main():
     #Main loop for home menu
     while True:
         userInput2 = homeMenu(tasksList, username, welcomeString)
-        if userInput2 == "5":
+        if userInput2 == "E":
             break
     #afterloop
     goodbye()

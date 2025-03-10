@@ -1,8 +1,8 @@
 #Microservice which allows communication via main program using .txt files
 #Allows Editing and deleting 
-
+#imports
+import time
 #class definition for our tasks array
-
 class Task:
 	def __init__(self, title, dueDate, importance, status):
 		self.title = title
@@ -51,17 +51,79 @@ def printList(tasks):
 			print(f"{numTasks}.{obj.title}".ljust(30), f"{obj.dueDate} days until due".ljust(25), f"{obj.importance} importance".ljust(25), f"Status: {obj.status}".ljust(25))
 	return numTasks
 
-def deleteTask(tasksList):
-	printList(tasksList)
-	selection =  input("Which task would you like to remove?: ")
-	del tasksList[int(selection) - 1]
-	printList(tasksList)
+def deleteTask(tasksList, indexOfRemoval):
+	del tasksList[int(indexOfRemoval - 1)]
+	writeToFile(tasksList) 
 
-def main():
-	tasksList = readFile()
-	printList(tasksList)
-	deleteTask(tasksList)
+def editTask():
+	#user enters an index in main, prompt them for all the changes in main
+	#Must retain list order...
+	#HERE we read it from a file, and write over the old line
+	editFile = "listenEdit.txt"
+	tasksFile = "tasks.txt"
+	try:
+		with open(editFile, "r") as file:
+				lines =  file.readlines()	#read all lines
+				if len(lines) >= 3 and lines[0].strip() == "edit":	#ensure 2 lines exist, and "edit" too
+						index = int(lines[1].strip()) - 1			#get index of replacement - file and list[] should match
+						editedTask = lines[2].strip()				#next line should be task to be edited
+						print("Beginning edit...")
+						try:
+							with open(tasksFile, "r") as file:		#read in CURR task file to local []
+								taskLines = file.readlines()		
 
+								taskLines[index] = editedTask + "\n"  #modify only the specified line []
 
-#main call
-main()
+							with open(tasksFile, "w") as file:		#open and rewrite the tasks file
+								file.writelines(taskLines)
+
+						except FileNotFoundError:
+							print("Error: Tasks file not found\n")
+	except FileNotFoundError:
+		print(f"Error: '{editFile}' not found.")
+
+#updates the file to have updated list once removed 
+def writeToFile(tasksList):
+	tasksFile = "tasks.txt"
+	try:
+		with open(tasksFile, "w") as f:
+			for task in tasksList:
+				f.write(f"{task.title},{task.dueDate},{task.importance},{task.status}\n")
+		print("Task list successfully updated in 'tasks.txt'.")
+	except FileNotFoundError:
+		print(f"Error: Could not find/open {tasksFile}")
+
+#Listening function for both Services (Edit and Delete)
+def listen():
+	listenFile = "listeningFileMS-D.txt"
+	while True:
+		try:
+			with open(listenFile, "r") as file:
+				lines =  file.readlines()	#read all lines
+
+			if len(lines) < 2:
+				print("Error: Invalid file format.")
+				return
+			
+			command = lines[0].strip().lower()
+			index = int(lines[1].strip()) - 1  # Convert 1-based to 0-based index
+
+			if command == "edit":
+				editedTask = lines[2].strip()
+				editTask(index, editedTask)
+			elif command == "del":
+				tasksList = readFile()
+				deleteTask(tasksList, index)
+			else:
+				print("Error: Unknown command in file.")
+
+			# **Clear the file after processing**
+			with open(EDIT_FILE, "w") as file:
+				pass  # Opening in "w" mode clears the file
+		except FileNotFoundError:
+			print(f"Error: '{listenFile}' not found.")
+	
+	time.sleep(5)  # Wait 5 seconds before checking again
+
+#call start
+listen()

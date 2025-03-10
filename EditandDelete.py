@@ -55,7 +55,7 @@ def deleteTask(tasksList):
 	printList(tasksList)
 	selection =  input("Which task would you like to remove?: ")
 	del tasksList[int(selection) - 1]
-	printList(tasksList)
+	printList(tasksList) #rewrite to file
 
 def main():
 	tasksList = readFile()

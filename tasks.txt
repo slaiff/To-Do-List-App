@@ -1,4 +1,5 @@
 Fard,1,Low,Incomplete
-Skeet,3,High,Incomplete
 PENOIs,5,Low,Complete
-BigZkibidi,0,High,Complete
+meow,5,high,incomplete
+fart,6,low,complete
+peepeeandcaca,2,high,incomplete
