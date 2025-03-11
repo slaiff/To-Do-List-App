@@ -5,6 +5,10 @@ from math import fabs
 import sys
 import os
 import time
+import subprocess
+
+
+
 
 #class definition for our tasks array
 class Task:
@@ -42,19 +46,56 @@ def welcome(username, welcomeString):
 
 #quit function
 def goodbye():
+    endOfDaySummaryFile = "endOfDaySummary.txt"
     confirmMssg = """
-    "Are you sure you want to close the app? Please note your progress will *not* be saved to file,
-    and all progress will be lost. If you wish to save, please take note of your additions, changes, etc
-    and add these to your text file before closing.
+    "Are you sure you want to close the app? You may close normally, which saves all tasks to file, 
+    or close with smart-save which saves *just* incomplete tasks, for easy pick up next time! 
     """
+    prompt = """
+    Normal Close 'y' 
+    Smart-Save Close 'yy'    
+    Go back 'n'
+    >> """
     print(confirmMssg)
-    userConfirm = input("Close app? 'y' or 'n' > ").lower()
+    userConfirm = input(prompt).lower()
     if(userConfirm in ['y']):
         goodbye = """
         Thank you for using Task List Builder! I hope it helped you with your schedule!
-                Have a good day :)
+        All tasks have been saved to file.
+        Here is your end of day summary! It has also been written to file :)
         """
         print(goodbye)
+        #run the subprocess 
+        subprocess.run(["python", "eodSummaryAndExport.py"])
+        #get file contents and print
+        try:
+            with open(endOfDaySummaryFile, "r") as file: 
+                linesInFile = file.readlines()
+                for lines in linesInFile:
+                    print(lines)
+        except FileNotFoundError:
+            print("Uh-oh, couldnt find the end of day summary file!\n")
+        sys.exit(0)
+    if(userConfirm in ['yy']):
+        goodbye2 = """
+        Thank you for using Task List Builder! I hope it helped you with your schedule! 
+        All *incomplete* tasks from your list have been saved to file for next time!
+        Here is your end of day summary too! It has also been written to it's file :)
+        """
+        time.sleep(1)
+        print(goodbye2)
+        #run the subprocess 
+        subprocess.run(["python", "eodSummaryAndExport.py"])
+        #get file contents and print
+        try:
+            with open(endOfDaySummaryFile, "r") as file: 
+                linesInFile = file.readlines()
+                for lines in linesInFile:
+                    print(lines)
+        except FileNotFoundError:
+            print("Uh-oh, couldnt find the end of day summary file!\n")
+
+        wakeSaveMS()    #save incomplete's to fiile
         sys.exit(0)
     else:
         print("Going back...")
@@ -98,7 +139,7 @@ def updateFile(tasksList):
 #Home menu of program
 def homeMenu(tasksList, username, welcomeString):
     print()
-    userInput1 = input("To keep working, do nothing. To view the Home Menu, enter 'm' >> ")
+    userInput1 = input("To keep working, do nothing. To view the Home Menu, enter 'm' >> ").lower()
     userInput2 = str(0)
 
     message = """
@@ -112,15 +153,15 @@ def homeMenu(tasksList, username, welcomeString):
         4. Remove a task
         5. Display the task list
         6. Begin / End Timer
-        7. Sort the task list- FIXME
-        8. Save to file - WIP
-        9. Rebuild a new task list - from file
-        E. Close app
+        7. Sort the task list 
+        8. Save ALL to file
+        9. Rebuild a new task list (from file)
+        E. Close app & End Of Day Summary
         Want more info? Enter 'more'
 
 Select >> : """
     if(userInput1 == "m"):
-        userInput2 = input(message)
+        userInput2 = input(message).lower()
     if(userInput2 == "1"):
         os.system('cls') #clear screen 
         addTask(tasksList, username)
@@ -132,11 +173,13 @@ Select >> : """
         completeTask(tasksList, username)
     if(userInput2 == "4"):
         os.system('cls')
-        updateFile(tasksList)
-        printList(tasksList, username)
-        wakeEditAndDeleteMS(tasksList)
-        time.sleep(3)
-        tasksList = readFile()
+        updateFile(tasksList)               #update File to match curr tasklist
+        printList(tasksList, username)      #display list to user
+        wakeDelMS(tasksList)                #wake Delete
+        time.sleep(3)                       #wait for it
+        #tasksList = readFile()              #re-read file
+        tasksList.clear()
+        tasksList.extend(readFile())
         print("Updated list:\n")
         printList(tasksList,username)
     if(userInput2 == "5"):
@@ -147,20 +190,23 @@ Select >> : """
         print("waking timer..\n")
         wakeTimerMS()
     if(userInput2 == "7"):
+        updateFile(tasksList)
         os.system('cls')
-        print("waking sort..\n")
-        wakeSortMS()
+        prompt = """
+        How would you like to sort the list?
+        Enter 'a' for alphabetically, 'd' for by due date, or 'p' for priority :
+        """
+        sortType = input(prompt)
+        wakeSortMS(sortType, tasksList, username)
     if(userInput2 == "8"): 
         os.system('cls')
-        print("waking save..\n")
-        wakeSaveMS()
+        print("All tasks saved to tasks file...")
+        updateFile(tasksList)
     if(userInput2 == "9"):
         os.system('cls')
         rebuild()
-    if(userInput2 == "E"):
-        #call goodbye
+    if(userInput2 == "e"):
         os.system('cls') #clear screen 
-        print("Updating file...\n")
         updateFile(tasksList)
         userConfirm = goodbye()
      
@@ -198,9 +244,9 @@ def addTask(tasks,username):
         print("Invalid input for status, please input I or C : ")
         status = input(">> : ").lower()
     if status == "i":
-        status = "Incomplete"
+        status = "incomplete"
     if status == "c":
-        status = "Complete"
+        status = "complete"
     tasks.append(Task(title, dueDate, importance, status)) 
     os.system('cls') #clear screen
     printList(tasks,username)
@@ -220,7 +266,7 @@ def completeTask(tasks, username):
             if(confirmInput == "y"):
                 os.system('cls')
                 print(f"<< {task.title} >>  - Completed")
-                task.status = "Complete"
+                task.status = "complete"
                 printList(tasks, username)
                 break
             else:
@@ -229,53 +275,27 @@ def completeTask(tasks, username):
         else:
             print("Not a valid selection, try again.")
 
+  
+def wakeSortMS(sortType, tasksList, username):
+    # Write the sort command to listenSort.txt and ensure it's flushed
+    with open("listenSort.txt", "w") as file:
+        file.write(sortType)
+        #file.flush()
+        #os.fsync(file.fileno())
+    
+    print(f"Sent sort request '{sortType}' to microservice.")
 
-
-
-#data = [["D", "0", "High", "Incomplete"], ["C", "2", "Low", "Incomplete"], ["B", "5", "Medium", "Incomplete"],
-       # ["A", "4", "High", "Incomplete"]]
-
-#Function which interacts w/ Sorting Microservice
-def wakeSortMS():
-    #save current file contents
-    data = [] 
-    with open("tasks.txt", "r") as file:
-         data = [line.strip().split(", ") for line in file]
-
-    print(data)
-
-    #Write the user's desired command / overwrites ALL CONTEnts
-    with open("tasks.txt", "w") as file:
-        file.write("D") #FIXME SHOULD BE USER INPUT
-
-    time.sleep(4)
-
-    #Check if microservice is done -> "receives"
-    with open("tasks.txt", "r+") as file:
-        confirmation = file.read()
-        if confirmation == "Received":
-            delimiter = ","
-            with open("tasks.txt", "w") as file:
-                #REWRITE to file
-                for row in data:
-                    line = delimiter.join(row) + "\n"
-                    file.write(line)
-
+    # Wait long enough for the microservice to process the command
+    # (Adjust this time if needed based on your environment)
     time.sleep(10)
 
-    #After waiting, load back in the sorted list
-    todo_list = []  # storage for delimited txt file --> list[list[str]]
-    with open("tasks.txt", "r") as r_file:
-            task = r_file.readlines()
-            mylist = []
-            for y in [x.split(',') for x in task]:
-                for z in y:
-                    mylist.append(z.replace('\n', ''))
-            for i in range(0, len(mylist), 4):
-                todo_list.append(mylist[i:i + 4])
-    with open("tasks.txt", "w") as file:
-        file.write("")
-    print(todo_list)   
+    # Rebuild and display the updated task list
+    tasksList.clear()
+    tasksList.extend(readFile())
+    print("Updated task list:\n")
+    printList(tasksList, username)
+
+ 
 
 #Reset's program to start
 def rebuild():
@@ -324,7 +344,7 @@ def printList(tasks, username):
 
 #Wakes/Signals the Saving MS
 def wakeSaveMS():
-    listenFileMS_D = "listeningFileMS-D.txt"
+    listenFileMS_D = "listenSave&Timer.txt"
     try:
         with open(listenFileMS_D, "w") as file:
             file.write("save")
@@ -332,8 +352,11 @@ def wakeSaveMS():
         print("ERROR: Could not find the listening file for the Save feature MicroserviceD\n")
 
 def wakeTimerMS():
-    global timerOn  #let this func know we're referring to the global var named, timerOn, not def a new one
-    listenFileForTimer = "listenTimer.txt"
+    global timerOn  
+
+    listenFileForTimer = "listenSave&Timer.txt"
+    timerOutputFile = "timerOutput.txt"
+
     try:
         with open(listenFileForTimer, "w") as file:
             if timerOn == 0:
@@ -342,13 +365,29 @@ def wakeTimerMS():
             else:
                 file.write("endTimer")
                 timerOn = 0
+                print("Accessing timer...\n")
+
+        time.sleep(3)  # Wait for microservice to write
+
+        with open(timerOutputFile, "r") as file:
+                    elapsedTime = file.read().strip()
+
+                    if elapsedTime:  # Ensure we read actual data before clearing
+                        print(f"Timer ended, you've been working for: {elapsedTime} minutes!\n")
+
+                            # Now that we've read it, we can safely clear the file
+                        with open(timerOutputFile, "w") as file:
+                             file.write("")
+    
     except FileNotFoundError:
         print("ERROR: Could not find the listening file for the Timer feature within MicroserviceD\n")
+    
+   
 
 #Wake Edit
 def wakeEditMS(tasksList, username):
 #File
-    listenFileForEdit = "listenEdit.txt"
+    listenFileForEdit = "listenEdit&Del.txt"
 #ask user for index to edit 
     print()
     print("Select one of your tasks below to edit: ")
@@ -385,16 +424,30 @@ def wakeEditMS(tasksList, username):
                 if importance == "3":
                     importance = "High"
 
+                status = input("Completion status (C for complete/I for incomplete): ").lower()
+                while status not in ["I", "C", "i", "c"]:
+                    print("Invalid input for status, please input I or C : ")
+                    status = input(">> : ").lower()
+                if status == "i":
+                    status = "incomplete"
+                if status == "c":
+                    status = "complete"
+
                 #write the newly built object to the file 
                 os.system('cls') #clear screen
                 try:
                     with open(listenFileForEdit, 'w') as f:
                         #build object - like passing to a function, which is our class
-                        f.write(f"{title},{dueDate},{importance}\n")
+                        f.write("edit\n")   #signal edit MS
+                        f.write(f"{userInput}\n")   #index of removal
+                        f.write(f"{title},{dueDate},{importance},{status}\n")
                 except Exception as e:
                     print(f"Error updating file: {e}")
-
+                time.sleep(3)
                 print("List updated:\n")
+                #rebuild task list 
+                tasksList.clear()
+                tasksList.extend(readFile())
                 printList(tasksList, username)
                 break
             else:
@@ -406,8 +459,8 @@ def wakeEditMS(tasksList, username):
 
 
 #Wakes delete 
-def wakeEditAndDeleteMS(tasksList):
-    listenFileForDelete = "listeningFileMS-D.txt"
+def wakeDelMS(tasksList):
+    listenFileForDelete = "listenEdit&Del.txt"
 
     userInput = input("Which task would you like to remove?:")
 

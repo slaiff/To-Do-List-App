@@ -1,17 +1,16 @@
 import time
 
+def listenForSort():
+    # Read the first line from listenSort.txt for the sort command
+    with open("listenSort.txt", "r") as l_file:
+        command = l_file.readline().strip().upper()
+    return command
+
 while True:
-    # Listens for a valid input and writes back a
-    # confirmation or denial of service
-    with open("tasks.txt", "r") as file:
-        message = file.read()
-    if message.upper() in ['A','D','P']:
-        with open("tasks.txt", "w") as w_file:
-            w_file.write("Received")
-    else:
-        with open("tasks.txt", "w") as w_file:
-            w_file.write("Invalid Request")
-    time.sleep(10)
+    # Get the sort command from listenSort.txt instead of tasks.txt
+    message = listenForSort()
+
+    time.sleep(2)
 
     todo_list = []  # storage for delimited txt file --> list[list[str]]
     with open("tasks.txt", "r") as r_file:
@@ -64,4 +63,9 @@ while True:
                     line = delimiter.join(row) + "\n"
                     file.write(line)
 
-    time.sleep(5)
+    # Clear the command if it was a valid one so it doesn't repeat
+    if message in ("A", "D", "P"):
+        with open("listenSort.txt", "w") as l_file:
+            l_file.write("")
+
+    time.sleep(2)

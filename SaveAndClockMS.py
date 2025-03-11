@@ -1,24 +1,43 @@
 #Imports
 import time
+import os
 
 #Globals
-saveListenFile = "listeningFileMS-D.txt"
-timerListenFile = "listenTimer.txt"
+listenFile = "listenSave&Timer.txt"
+timerOutput = "timerOutput.txt"
+saveFileName = "tasks.txt"
+timerStart = None
 
-#listen for "save" command in command file
-#Try's this, if not (an exception) shows error
-def saveListen():
+# Listen for "save" or "startTimer" commands
+def listen():
+    global timerStart  #let this func know when we say "timerStart" we mean the global
     while True:
         try:
-            with open(saveListenFile, "r") as file:
+            with open(listenFile, "r") as file:
                 contents = file.read().strip()
-                if contents == "save":
-                    print("Saving...")
-                    saveFile()  #breaks out
-        except FileNotFoundError:
-            print(f"Error: '{saveListenFile}' not found.")
 
-        time.sleep(5)  # Wait 5 seconds before checking again
+            if contents == "save":
+                print("Saving...")
+                saveFile()
+                clearCommand()
+            elif contents == "startTimer" and timerStart is None:
+                print("Timer Started")
+                timerStart = time.time()  # Set start time
+                clearCommand()
+            elif contents == "endTimer" and timerStart is not None:
+                print("Timer Ended")
+                printElapsed(timerStart)
+                timerStart = None  # Reset timer
+                clearCommand()
+        except FileNotFoundError:
+            print(f"Error: '{listenFile}' not found.")
+
+        time.sleep(0.1)  
+
+# Clears the command after execution
+def clearCommand():
+    with open(listenFile, "w") as file:
+        file.write("")
 
 #Opens Task-File (.txt), re-writes it to only contain INCOMPLETE tasks
 def saveFile():
@@ -32,47 +51,22 @@ def saveFile():
                 task = line.strip().split(',')
                 if len(task) == 4 and task[3].lower() != "complete":  # Ensure correct format and skip completed tasks
                     file.write(line)
-        with open(saveListenFile, "w") as file:
+        with open(listenFile, "w") as file:
             file.write("done")           
         print("Task list successfully updated in 'tasks.txt'.")
         
     except Exception as e:
         print(f"Error updating file: {e}")
 
-def timerListen():
-    #loop
-    while True:
-        try:
-            with open(timerListenFile, "r") as file:
-                contents = file.read().strip()
-                if contents == "startTimer":
-                    print("TimerStarted")
-                    timerBegin()  #breaks out
-        except FileNotFoundError:
-            print(f"Error: '{timerListenFile}' not found.")
-
-        time.sleep(2)  # Wait 5 seconds before checking again
-
-def timerBegin():
-    startTime = time.time()     #current time, in seconds
-    #keep running timer till signaled to end
-    while True:
-        try:
-            with open(timerListenFile, "r") as file:
-                contents = file.read().strip()
-                if contents == "endTimer":
-                    print("TimerEnded")
-                    printElapsed(startTime)  #breaks out
-        except FileNotFoundError:
-            print(f"Error: '{timerListenFile}' not found.")
-
-        time.sleep(2)  # Wait 5 seconds before checking again
-    
 
 def printElapsed(startTime):
-    elapsedTime = time.time() - startTime   #current time (in sec) minus when we began
-    print(f"Elapsed time: {int(elapsedTime)} seconds")
+    elapsedTime = (time.time() - startTime) / 60  # Convert to minutes
+    formattedTime = f"{elapsedTime:.2f}"
 
-#Begin call flow
-#saveListen()
-timerListen()
+    with open("timerOutput.txt", "w") as file:
+        file.write(formattedTime)
+        file.flush()  # Ensure immediate write
+        os.fsync(file.fileno())  # Force OS to sync to disk
+
+#Begin listen
+listen()

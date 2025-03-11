@@ -52,26 +52,25 @@ def printList(tasks):
 	return numTasks
 
 def deleteTask(tasksList, indexOfRemoval):
-	del tasksList[int(indexOfRemoval - 1)]
+	del tasksList[int(indexOfRemoval)]
 	writeToFile(tasksList) 
 
-def editTask():
+def editTask(index, editedTask):
 	#user enters an index in main, prompt them for all the changes in main
 	#Must retain list order...
 	#HERE we read it from a file, and write over the old line
-	editFile = "listenEdit.txt"
+	editFile = "listenEdit&Del.txt"
 	tasksFile = "tasks.txt"
 	try:
 		with open(editFile, "r") as file:
 				lines =  file.readlines()	#read all lines
-				if len(lines) >= 3 and lines[0].strip() == "edit":	#ensure 2 lines exist, and "edit" too
-						index = int(lines[1].strip()) - 1			#get index of replacement - file and list[] should match
-						editedTask = lines[2].strip()				#next line should be task to be edited
+				if len(lines) >= 3 and lines[0].strip() == "edit":	#ensure 3 lines exist, and "edit" too
+						#index = int(lines[1].strip()) - 1			#get index of replacement - file and list[] should match
+						#editedTask = lines[2].strip()				#next line should be task to be edited
 						print("Beginning edit...")
 						try:
 							with open(tasksFile, "r") as file:		#read in CURR task file to local []
 								taskLines = file.readlines()		
-
 								taskLines[index] = editedTask + "\n"  #modify only the specified line []
 
 							with open(tasksFile, "w") as file:		#open and rewrite the tasks file
@@ -95,15 +94,17 @@ def writeToFile(tasksList):
 
 #Listening function for both Services (Edit and Delete)
 def listen():
-	listenFile = "listeningFileMS-D.txt"
+	listenFile = "listenEdit&Del.txt"
+	
 	while True:
 		try:
 			with open(listenFile, "r") as file:
 				lines =  file.readlines()	#read all lines
 
 			if len(lines) < 2:
-				print("Error: Invalid file format.")
-				return
+				#print("Error: Invalid file format.")
+				time.sleep(2)
+				continue
 			
 			command = lines[0].strip().lower()
 			index = int(lines[1].strip()) - 1  # Convert 1-based to 0-based index
@@ -118,12 +119,12 @@ def listen():
 				print("Error: Unknown command in file.")
 
 			# **Clear the file after processing**
-			with open(EDIT_FILE, "w") as file:
+			with open(listenFile, "w") as file:
 				pass  # Opening in "w" mode clears the file
 		except FileNotFoundError:
 			print(f"Error: '{listenFile}' not found.")
-	
-	time.sleep(5)  # Wait 5 seconds before checking again
+			
+		time.sleep(2)  # Wait 2 seconds before checking again
 
 #call start
 listen()
